@@ -108,12 +108,11 @@ class Process(vp.Expression):
         s = np.concatenate([s_i, s_last], axis=0).view(vector)
         t = np.concatenate([t_i*T1, T], axis=0)
         #calculate factors
-        scat_factor = self.medium.scatter(s[-2].dot(s[-1]))
+        scat_factor = self.medium.scatter(s[-2].dot(s[-1]))[np.newaxis,:]
         att_factor = self.medium.attenuation(T, n_scattering=self.Nsteps)
-        logger.debug('scat_factor={}',scat_factor)
-        logger.debug('att_factor={}',att_factor)
-        logger.debug('delta_factor={}',delta_factor)
-        self.factor = scat_factor.flatten()*att_factor.flatten()*delta_factor.flatten()
+        step_factor = (T1/T)**(self.Nsteps-1)
+        self.factor = scat_factor*att_factor*step_factor*delta_factor
+        self.factor = self.factor.reshape(s.shape[1])
         self.factor*= self.medium.c
         #optional stuff
         if self.use_masking:

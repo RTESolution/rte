@@ -34,7 +34,6 @@ def Times_from_xi(self, xi):
     #calculate factor
     powers = np.arange(len(xi))-1
     powers = powers.reshape(-1,1)
-    logger.debug('powers = {}',powers)
     self.factor = np.prod(np.power((1.-xi)[1:],powers[1:]), axis=0)
     #calculate T
     xi_rev = np.flip(xi, axis=0)
