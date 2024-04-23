@@ -10,8 +10,6 @@ from loguru import logger
 
 #intermediate steps
 
-#times
-
 def times_from_xi(xi):
     #calculate T
     xi_rev = np.flip(xi, axis=0)
@@ -38,11 +36,13 @@ def Times_from_beta_xi(Nsteps):
     @vp.expression
     @swapaxes
     def times(self, xi):
-        #no factor here
+        #factor is Gamma(n)/Gamma(1+n)=1/n for each step, so it's (1/n!)
+        self.factor = 1/np.prod(np.arange(1,Nsteps))
+        self.factor *= np.ones_like(xi)
         return times_from_xi(xi)
-
-    i = np.arange(1,Nsteps)
-    return times(xi = 1|vp.FromDistribution(beta(a=1,b=i).ppf,size=Nsteps-1))
+        
+    n = np.arange(1,Nsteps)
+    return times(xi = 1|vp.FromDistribution(beta(a=1,b=n).ppf,size=Nsteps-1))
 
 #directions
 class Directions_from_scattering_distr(vp.Expression):
