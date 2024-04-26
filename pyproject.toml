@@ -13,8 +13,8 @@ dependencies = [
     "loguru"
     ]
 
-[tool.setuptools]
-packages = ["rte"]
+[tool.setuptools.package_dir]
+rte = "src"
 
 [project.optional-dependencies]
 gui = ["PyOpenGL ~= 3.0", "PySide6 ~= 6.7", "pyqtgraph ~= 0.13"]
