@@ -13,7 +13,7 @@ dependencies = [
     "loguru"
     ]
 
-[tool.setuptools.package_dir]
+[tool.setuptools.package-dir]
 rte = "src"
 
 [project.optional-dependencies]
