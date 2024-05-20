@@ -71,14 +71,15 @@ In order to do the calculation, the user needs to define the following objects:
 In other words, the `Source` and `Target` define the integration spaces of the initial and final state of the photon trajectory, while the `Process` defines also the intermediate steps.
 
 ## Examples
-The position, time and direction in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it).
+The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
+See the [parameter examples](#parameter examples) section to see how to define them.
 
-### Expression examples
+## Parameter examples
 RTE uses [vegas_params](https://github.com/RTESolution/vegas_params) for the definition of the integration space:
 ```python
 import vegas_params as vp
 ```
-#### Time
+### Time
 Time is a scalar variable, it can either be fixed or uniformely distributed
 ```python
 #exactly at the moment of T=1s
@@ -86,7 +87,7 @@ T_fixed = vp.Fixed(1)
 #Will be integrated between T=1s and T=10s
 T_fixed = vp.Uniform(1,10)
 ```
-#### Position
+### Position
 Position should be defined as vector: vp.Vector ensures that output has a correct shape
 ```python
 #fixed at the coordinates (x=1m, y=2m, z=3m)
@@ -100,7 +101,7 @@ R_plane = vp.Vector(xyz = vp.Uniform([[-1,1],[-2,2]])|0)
 #Uniformely distributed in a box at (0,0,0) with size=2m
 R_box = vp.Vector(xyz = vp.Uniform([(-1,1),(-1,1),(-1,1)])) 
 ```
-#### Direction
+### Direction
 Direction is a unit 3D vector, so you can define it as `vp.Vector` directly
 ```python
 S_up = vp.Vector([0,0,1]) 
@@ -116,7 +117,7 @@ S_uniform = vp.Direction()
 #looking up at fixed zenith angle. It will still be integrated over phi=[0, 2*pi]
 S_fixed_zenith = vp.Direction(cos_theta=0.9) 
 ```
-#### Position again: sphere
+### Position again: sphere
 One can combine the `vp.Vector`, `vp.Fixed`, `vp.Direction` etc. to make a uniform position on a given sphere - for example, an optical detector
 ```python
 detector_radius = 0.5
