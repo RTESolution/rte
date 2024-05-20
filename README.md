@@ -15,6 +15,7 @@
       + [Direction](#direction)
       + [Position again: sphere](#position-again-sphere)
 - [License](#license)
+- [License](#license)
 
 <!-- TOC end -->
 
@@ -142,6 +143,10 @@ detector_radius = 0.5
 detector_center = vp.Vector([1,0,1])
 R_sphere = detector_radius * vp.Direction() + detector_position
 ```
+## Modifying the expressions
+*TODO*
+## Visualizing trajectories
+*TODO*
 
 # License
 
