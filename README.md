@@ -72,7 +72,7 @@ In other words, the `Source` and `Target` define the integration spaces of the i
 
 ## Examples
 The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
-See the [parameter examples](#parameter examples) section to see how to define them.
+See the [parameter examples](#parameter-examples) section to see how to define them.
 
 ## Parameter examples
 RTE uses [vegas_params](https://github.com/RTESolution/vegas_params) for the definition of the integration space:
