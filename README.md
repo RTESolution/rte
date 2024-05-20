@@ -1,3 +1,23 @@
+# Table of contents
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [About the project](#about-the-project)
+- [Getting Started](#getting-started)
+   * [Prerequisites](#prerequisites)
+   * [Installation](#installation)
+      + [1. Use development version from github](#1-use-development-version-from-github)
+      + [2. Install tagged package from PyPI](#2-install-tagged-package-from-pypi)
+   * [Running the calculation:](#running-the-calculation)
+- [Usage](#usage)
+   * [Parameter examples](#parameter-examples)
+      + [Time](#time)
+      + [Position](#position)
+      + [Direction](#direction)
+      + [Position again: sphere](#position-again-sphere)
+- [License](#license)
+
+<!-- TOC end -->
+
 # About the project
 
 This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation [[V.Allakhverdian et al.]()].
@@ -58,6 +78,8 @@ p = rte.Process(src, tgt,
 result = p.calculate(nitn=10, neval=10000) #run the numerical calculation using the `vegas` integrator
 print(result)
 ```
+The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
+See the [parameter examples](#parameter-examples) section to see how to define them.
 
 # Usage
 
@@ -69,10 +91,6 @@ In order to do the calculation, the user needs to define the following objects:
 * `rte.Process` - main object which performs the calculation of the probability of a photon, emitted by the `Source` to reach the `Target` after scattering `Nsteps` times.
 
 In other words, the `Source` and `Target` define the integration spaces of the initial and final state of the photon trajectory, while the `Process` defines also the intermediate steps.
-
-## Examples
-The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
-See the [parameter examples](#parameter-examples) section to see how to define them.
 
 ## Parameter examples
 RTE uses [vegas_params](https://github.com/RTESolution/vegas_params) for the definition of the integration space:
