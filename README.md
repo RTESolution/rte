@@ -1,23 +1,25 @@
 # Table of contents
-<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
 - [About the project](#about-the-project)
 - [Getting Started](#getting-started)
-   * [Prerequisites](#prerequisites)
-   * [Installation](#installation)
-      + [1. Use development version from github](#1-use-development-version-from-github)
-      + [2. Install tagged package from PyPI](#2-install-tagged-package-from-pypi)
-   * [Running the calculation:](#running-the-calculation)
-- [Usage](#usage)
-   * [Parameter expressions examples](#parameter-expressions-examples)
-      + [Time](#time)
-      + [Position](#position)
-      + [Direction](#direction)
-      + [Position again: sphere](#position-again-sphere)
+  * [Prerequisites](#prerequisites)
+  * [Installation](#installation)
+    + [1. Use development version from github](#1-use-development-version-from-github)
+    + [2. Install tagged package from PyPI](#2-install-tagged-package-from-pypi)
+  * [Running the calculation](#running-the-calculation)
+- [How to define parameter expressions](#how-to-define-parameter-expressions)
+    + [Time](#time)
+    + [Position](#position)
+    + [Direction](#direction)
+    + [Position again: point on sphere](#position-again--point-on-sphere)
+  * [Working with parameter expressions](#working-with-parameter-expressions)
+    + [Sampling](#sampling)
+    + [Tree structure of expressions](#tree-structure-of-expressions)
+    + [Inspecting](#inspecting)
+    + [Modifying](#modifying)
+  * [Inspecting trajectories](#inspecting-trajectories)
+    + [3D viewer](#3d-viewer)
 - [License](#license)
-- [License](#license)
-
-<!-- TOC end -->
 
 # About the project
 
@@ -53,7 +55,7 @@ pip install "git+https://https://github.com/RTESolution/rte.git[gui, test]"
 
 
 
-## Running the calculation:
+## Running the calculation
 
 In order to do the calculation, the user needs to define the following objects:
 
@@ -211,6 +213,7 @@ p.save_trajectory=True #enable saving trajectories
 p.sample(100) #generate 100 trajectories
 trajectories = p.trajectory #get the results
 ```
+Trajectories contain the position `R`, time `T` and direction `s` of each photon trajectory segment.
 
 ### 3D viewer 
 You can plot the trajectories with a 3D viewer. In order to do this, make sure to install this module with the "gui" dependencies:
