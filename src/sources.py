@@ -1,8 +1,9 @@
 import numpy as np
 from vegas_params import expression, Uniform
-from vegas_params.vector import vector,Vector, Scalar, Direction, expression
-
+from vegas_params.vector import vector, Vector, Scalar, Direction
 from dataclasses import dataclass
+
+from .utils import combine_rotations
 
 @dataclass 
 class Point:
@@ -41,19 +42,16 @@ class Target:
 class Source(Target):
     pass
 
-def combine_rotations(dir_base:vp.vector, dir_relative:vector)->vp.vector:
-    rot = align_rotation_to_vector(dir_base)
-    return rot.apply(dir_relative.reshape(-1,3)).view(vector)
+@expression
+class TrackSource:
+    T: Scalar
+    track_pos: Vector = Vector([0,0,0])
+    track_speed: Scalar = 3e8 #m/s
+    track_dir: Direction = Direction(1,0)
+    photon_dir: Direction = Direction(cos_theta=0.9)
 
-@vp.expression
-class SourceTrack:
-    T: vp.Scalar
-    R0: vp.Vector = vp.Vector([0,0,0])
-    track_dir: vp.Direction = vp.Direction(1,0)
-    photon_dir: vp.Direction = vp.Direction(cos_theta=0.9)
-    track_speed: 
-    
-    def __call__(self, T, R0, track_dir, photon_dir):
-        R = R0+track_dir*T
+    @staticmethod
+    def __call__(T, track_pos, track_speed, track_dir, photon_dir):
+        R = track_pos+track_dir*track_speed*T
         s = combine_rotations(track_dir, photon_dir)
         return Point(R,T,s)
