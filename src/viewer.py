@@ -50,7 +50,6 @@ def plot_photons(points, photon_size=1):
     cm = pg.colormap.get('CET-D8')
     for pt in points.iter():
         color = cm.map([1-pt.T]*2, mode='Float')
-        print(color.shape)
         #color[:,3]=alpha#set the alpha
         line=gl.GLLinePlotItem(pos=[pt.R, pt.R+pt.s*photon_size], 
                                color=color,
