@@ -44,11 +44,11 @@ Install using pip:
 
 ### 1. Use development version from github
 ```shell
-pip install git+https://https://github.com/RTESolution/rte.git
+pip install git+https://github.com/RTESolution/rte.git
 ```
 Optionally you can install the dependencies for the 3D visualisation and for running tests
 ```shell
-pip install "git+https://https://github.com/RTESolution/rte.git[gui, test]"
+pip install "git+https://github.com/RTESolution/rte.git[gui, test]"
 ```
 ### 2. Install tagged package from PyPI
 *TODO*
