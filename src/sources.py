@@ -40,3 +40,20 @@ class Target:
 
 class Source(Target):
     pass
+
+def combine_rotations(dir_base:vp.vector, dir_relative:vector)->vp.vector:
+    rot = align_rotation_to_vector(dir_base)
+    return rot.apply(dir_relative.reshape(-1,3)).view(vector)
+
+@vp.expression
+class SourceTrack:
+    T: vp.Scalar
+    R0: vp.Vector = vp.Vector([0,0,0])
+    track_dir: vp.Direction = vp.Direction(1,0)
+    photon_dir: vp.Direction = vp.Direction(cos_theta=0.9)
+    track_speed: 
+    
+    def __call__(self, T, R0, track_dir, photon_dir):
+        R = R0+track_dir*T
+        s = combine_rotations(track_dir, photon_dir)
+        return Point(R,T,s)
