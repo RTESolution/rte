@@ -150,5 +150,6 @@ class Process(vp.Expression):
 
     def calculate_with(self, override:dict, **vegas_kwargs):
         for key, value in override.items():
-            self[key]=value
-        return p.calculate(**vegas_kwargs)
+            if not key.startswith('_'):
+                self[key]=value
+        return self.calculate(**vegas_kwargs)
