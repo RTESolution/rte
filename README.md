@@ -17,7 +17,7 @@
     + [Tree structure of expressions](#tree-structure-of-expressions)
     + [Inspecting](#inspecting)
     + [Modifying](#modifying)
-  * [Inspecting trajectories](#inspecting-trajectories)
+- [Inspecting trajectories](#inspecting-trajectories)
     + [3D viewer](#3d-viewer)
 - [License](#license)
 
@@ -59,7 +59,7 @@ pip install "git+https://github.com/RTESolution/rte.git[gui, test]"
 
 In order to do the calculation, the user needs to define the following objects:
 
-* `rte.Source` - describing the emission of the photons - their initial time, position and direction
+* `rte.Source` - describing the emission of the photons - their initial time, position and direction. See [Sources section](#sources) for more information.
 * `rte.Target` - describing the detection of the photons - their final time and position
 * `rte.Medium` - contains constants of the uniform medium, in which the photon will be propagating
 * `rte.Process` - main object which performs the calculation of the probability of a photon, emitted by the `Source` to reach the `Target` after scattering `Nsteps` times.
@@ -67,7 +67,6 @@ In order to do the calculation, the user needs to define the following objects:
 In other words, the `Source` and `Target` define the integration spaces of the initial and final state of the photon trajectory, while the `Process` defines also the intermediate steps.
 
 Here is a full example script of such calculation:
-
 ```python
 import rte #main package module with Target, Source and Process classes
 import vegas_params as vp #definition of the integration spaces
@@ -95,6 +94,29 @@ print(result)
 The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
 See the [How to define parameter expressions](#how-to-define-parameter-expressions) section to see the examples.
 
+
+### Sources
+Currently we provide two types of sources, all of them can be used for constructing `rte.Process` objects:
+#### Basic source
+`rte.sources.Source`. position, time and direction are sampled ___independently___ of each other.
+Initilaized as in the example above:
+```python
+src = rte.Source(R = vp.Vector([0,0,0]), #fixed point
+                 T = 0, #photons emitted at fixed time 
+                 s = vp.Direction() #uniform direction vector
+                )
+```
+#### `rte.sources.TrackSource`:  creation of photons along a given track.
+It samples track position, direction, speed, time and photon direction relative to track. And in the output it provides the photon starting points, similartly to the basic source.
+```python
+src = rte.source.TrackSource(
+    T = vp.Uniform([0,1e-8]),
+    track_pos = Vector([0,0,0]), #starting point 
+    track_dir = vp.Direction(0.5,0), #45 degrees between X and Z axes
+    track_speed = 3e8, #m/s
+    photon_dir = Direction(cos_theta=0.9)#photon emission angles
+)
+```
 # How to define parameter expressions
 RTE uses [vegas_params](https://github.com/RTESolution/vegas_params) for the definition of the integration space:
 ```python
@@ -216,16 +238,27 @@ trajectories = p.trajectory #get the results
 Trajectories contain the position `R`, time `T` and direction `s` of each photon trajectory segment.
 
 ### 3D viewer 
-You can plot the trajectories with a 3D viewer. In order to do this, make sure to install this module with the "gui" dependencies:
+This package provides a simple 3D viewer functions to inspect trajectories and photon sources. 
+In order to use it, make sure to install this module with the "gui" dependencies:
 ```shell
 pip install -U "rte[gui]"
 ```
+
 and then you can run the viewer:
 ```python
+from rte.viewer import plot_trajectory
 #get the trajectories from the process
 plot_trajectory(p.trajectory, 
                 p.factor**0.95)
 ```
+
+additionally one can inspect the photon source samples:
+```python
+from rte.viewer import plot_photons
+plot_photons(src.sample(100), #generate 100 photons from source
+             photon_size=1) #show each of the photons as 1m line
+```
+
 # License
 
 *TODO*

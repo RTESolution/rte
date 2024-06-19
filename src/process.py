@@ -5,20 +5,13 @@ from vegas_params.vector import vector
 from vegas_params.utils import swapaxes, swap_axes
 from vegas_params.utils import mask_arrays, unmask_arrays, save_input
 #from vegas_params import integral
-from scipy.spatial.transform import Rotation
 
 from .sources import Point #dataclass which holds trajectory points
 from .steps import StepsUniform, StepsDistribution
 from .medium import Medium
+from .utils import combine_rotations, align_rotation_to_vector
 
 from loguru import logger
-
-def align_rotation_to_vector(v:vector)->Rotation:
-    v = np.asarray(v).view(vector)
-    n = v/v.mag()
-    theta = np.arccos(n.z)
-    phi = np.arctan2(n.y,n.x)
-    return Rotation.from_euler('yz',np.array([theta,phi]).T.squeeze())
 
 # --- Expressions are defined here
 class Process(vp.Expression):
