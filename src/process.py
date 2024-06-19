@@ -131,5 +131,24 @@ class Process(vp.Expression):
         #return ones - they will be multiplied by the factor automatically
         return np.ones(shape=(1,Nsamples))
 
+    def __getitem__(self, key):
+        expr = super()
+        for token in key.split('.'):
+            expr = expr.__getitem__(token)
+        return expr
+    
+    def __setitem__(self, key, value):
+        try:
+            path, key = key.rsplit('.',1)
+            expr = self[path]
+        except ValueError:
+            expr = super()
+        expr.__setitem__(key, value)
+        
     def calculate(self, **vegas_kwargs):
         return vp.integral(self)(**vegas_kwargs)
+
+    def calculate_with(self, override:dict, **vegas_kwargs):
+        for key, value in override.items():
+            self[key]=value
+        return p.calculate(**vegas_kwargs)
