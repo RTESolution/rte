@@ -177,9 +177,10 @@ class Process(vp.Expression):
             p.calculate()
             ```
         """
-        for key, value in override.items():
-            if not key.startswith('_'):
-                self[key]=value
+        if override is not None:
+            for key, value in override.items():
+                if not key.startswith('_'):
+                    self[key]=value
         return vp.integral(self)(**self.vegas_kwargs)
 
     def calculate_map(self, override:dict, 

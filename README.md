@@ -7,6 +7,7 @@
     + [1. Use development version from github](#1-use-development-version-from-github)
     + [2. Install tagged package from PyPI](#2-install-tagged-package-from-pypi)
   * [Running the calculation](#running-the-calculation)
+  * [Running the calculation in parallel](#running-the-calculation-in-parallel)
 - [How to define parameter expressions](#how-to-define-parameter-expressions)
     + [Time](#time)
     + [Position](#position)
@@ -88,12 +89,38 @@ p = rte.Process(src, tgt,
                 medium=rte.medium.water #the medium properties
                )
 
+#optionally: set the integrator parameters
+p.vegas_kwargs = {'nitn':10, 'neval':10000} 
 #run the numerical calculation using the `vegas` integrator
-result = p.calculate(nitn=10, neval=10000)
-print(result)
+result = p.calculate() 
+print(result) 
+#65505.6(8.4) - this number may vary because of random sampling
 ```
 The position `R`, time `T` and direction `s` arguments in `Source` and `Target` can either be fixed, or distributed (in which case the final calculation will integrate over it). 
 See the [How to define parameter expressions](#how-to-define-parameter-expressions) section to see the examples.
+
+The `Process.calculate` function evaluates the integral for the given setup of the source and target distributions.
+
+### Running the calculation in parallel
+
+The `Process.caluclate_map` function allows to perform parallel calculation of several processes, varying some of the parameters.
+
+For example if we want to calculate for many fixed final state times for the example above:
+```python
+import numpy as np
+T = np.geomspace(1e-8, 1e-7,21)
+#calculate the results for give time
+results = p.calculate_map(override={'tgt.T':T}, output='reshape')
+#get only the mean values
+import gvar #to get mean for each value in array
+print(gvar.mean(results))
+#[65515.26584496 42490.06720284 29069.30460075 20556.71848331
+# 14857.42366258 10894.38730677  8063.57276645  6002.31205735
+#  4481.53863444  3348.59624871  2499.77893137  1861.40452433
+#  1380.65335953  1018.65576917   746.67916569   543.01496697
+#   391.23942716   278.88939372   196.39585017   136.38307807
+#    93.22038259]
+```
 
 # How to define parameter expressions
 RTE uses [vegas_params](https://github.com/RTESolution/vegas_params) for the definition of the integration space:
@@ -202,8 +229,8 @@ You can access and change the inner parameters with the following syntax:
 source_time = src['T'] #vp.Fixed(0)
 #set the parameter
 src['R'] = R_plane
-#acess the nested parameter
-src['s']['phi'] = vp.Fixed(np.pi)
+#access the nested parameter with dot separated path
+src['s.phi'] = vp.Fixed(np.pi)
 ```
 ## Inspecting trajectories
 `vp.Process` calculates the weights of many photon trajectories.
