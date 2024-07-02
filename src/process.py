@@ -7,6 +7,9 @@ from vegas_params.utils import mask_arrays, unmask_arrays, save_input
 #from vegas_params import integral
 from scipy.spatial.transform import Rotation
 
+from itertools import product
+from functools import partial
+
 from .sources import Point #dataclass which holds trajectory points
 from .steps import StepsUniform, StepsDistribution
 from .medium import Medium
@@ -153,3 +156,16 @@ class Process(vp.Expression):
             if not key.startswith('_'):
                 self[key]=value
         return self.calculate(**vegas_kwargs)
+
+    def calculate_map(self, override, output='dict', map_function=map, **vegas_kwargs):
+        keys,values = override.keys(), override.values()
+        kwargs = [dict(zip(keys,v)) for v in product(*values)]
+        #run the actual calculation
+        result =  list(map_function(partial(self.calculate_with, **vegas_kwargs), kwargs))
+        #output the result
+        if output=='reshape':
+            return np.asarray(result).reshape([len(v) for v in values])
+        elif output=='dict':
+            return [dict(**d,result=r) for d,r in zip(kwargs,result)]
+        else:
+            return result
