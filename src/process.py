@@ -7,6 +7,7 @@ from vegas_params.utils import mask_arrays, unmask_arrays, save_input
 #from vegas_params import integral
 from scipy.spatial.transform import Rotation
 
+from concurrent.futures import ProcessPoolExecutor
 from itertools import product
 from functools import partial
 
@@ -44,6 +45,7 @@ class Process(vp.Expression):
         self.Nsteps = Nsteps
         self.save_trajectory = save_trajectory
         self.use_masking = use_masking
+        self.vegas_kwargs = {'nitn':10, 'neval':3000}
 
         if use_uniform_sampling:
             super().__init__(src=src,tgt=tgt,
@@ -148,20 +150,73 @@ class Process(vp.Expression):
             expr = super()
         expr.__setitem__(key, value)
         
-    def calculate(self, **vegas_kwargs):
-        return vp.integral(self)(**vegas_kwargs)
+    def calculate(self, override:dict=None):
+        """Run the calculation using the vegas integrator.
 
-    def calculate_with(self, override:dict, **vegas_kwargs):
+        Parameters
+        ----------
+        override: dict[str, value]
+            Change some parameters to given values, before calculating. 
+            If None (default), just run the calculation.
+        Returns
+        -------
+        gvar.GVar:
+            The integration result, containing mean value and sdev.
+
+        Notes
+        ------
+            * User can change the vegas integrator parameters via `Process.vegas_kwargs` variable
+            * Override just replaces the initial values of given parameters. 
+            Running 
+            ```
+            p.calculate(override={'src.T':1})
+            ``` 
+            is equivalent to
+            ```python
+            p['src.T']=1
+            p.calculate()
+            ```
+        """
         for key, value in override.items():
             if not key.startswith('_'):
                 self[key]=value
-        return self.calculate(**vegas_kwargs)
+        return vp.integral(self)(**self.vegas_kwargs)
 
-    def calculate_map(self, override, output='dict', map_function=map, **vegas_kwargs):
+    def calculate_map(self, override:dict, 
+                      output='dict', 
+                      map_function="ProcessPool"):
+        """Perform several calculations, for each of the values defined in 'override' dictionary.
+        
+        Parameters
+        ----------
+        override : dict[str, list]
+            A dictionary where key defines the parameter to be changed, and value defines the list of values for that parameter. 
+        
+        output : 'dict'|'reshape'
+            Expected output shape. 
+            If 'dict' (default) - return the dict with values and result
+            If 'reshape' - return an array of values, with dimensions corresponding to given parameters.
+        
+        map_function : callable or "ProcessPool"
+            This can be a default python `map` function, or its equivalent.
+            If a string "ProcessPool" is given - use `concurrent.futures.ProcessPoolExecutor` to run calculation concurrently.
+            
+        Returns
+        -------
+        list of dicts, or np.array, depending on the `output` parameter
+        
+        Notes
+        -----
+        If 'override' has several keys, the resulting calculation will be performed for the Cartesian product of these parameters (i.e. `override={'A':[1,2], 'B':[3,4]}` means calculation for `[{'A':1,'B':3},{'A':2,'B':3},{'A':1,'B':4}{'A':2,'B':4}]`
+        """
+        if map_function == 'ProcessPool':
+            with ProcessPoolExecutor() as executor:
+                return self.calculate_map(override=override, output=output, map_function=executor.map)
+                
         keys,values = override.keys(), override.values()
         kwargs = [dict(zip(keys,v)) for v in product(*values)]
         #run the actual calculation
-        result =  list(map_function(partial(self.calculate_with, **vegas_kwargs), kwargs))
+        result =  list(map_function(self.calculate, kwargs))
         #output the result
         if output=='reshape':
             return np.asarray(result).reshape([len(v) for v in values])
