@@ -25,13 +25,31 @@
 
 This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation [[V.Allakhverdian et al.]()].
 
+We solve the radiative transfer equation (RTE) in anisotropically scattering media as an infinite series. Each series term represents a distinct number of scattering events, with analytical solutions derived for zero and single scattering. Higher-order corrections are addressed through numerical calculations or approximations. The RTE solution corresponds to Monte Carlo sampling of photon trajectories with fixed start and end points. 
+
 RTE is a method developed for calculating light fluxes at an arbitrary point in space with an arbitrary source and an arbitrary detector at the registration point. 
-The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are uaing Heney-Greenstein function as scattering indicatrix, but the method in the article can work with an arbirtary indicatrix. 
+
+The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are uaing Heney-Greenstein function as scattering indicatrix:
+
+$p_g(\hat{\bf{s}},\hat{\bf{s}}_1) = \frac{1-g^2}{4\pi}(1+g^2-2g(\hat{\bf{s}},\hat{\bf{s}}_1))^{-3/2}$,
+
+but the method in the article can work with an arbirtary indicatrix. 
 
 In the article [[V.Allakhverdian et al.]()] Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
     
-$L=L_0+\sum_{n=1}^\infty\delta L^{(n)}$.
-*TODO*
+$L=L_0+\sum\limits_{n=1}^\infty\delta L^{(n)}$, where
+
+$L_0  = e^{-\mu_t ct}c \delta^3(\bf{r}-c\hat{\bf{s}}_0 t)\delta^2(\hat{\bf{s}}-\hat{\bf{s}}_0)$
+
+and
+
+$\delta L^{(n)} = e^{-\mu_a ct} P_n(\mu_s ct) \delta L_s^{(n)}$.
+
+$P_n(\mu_s ct) = e^{-\mu_s ct}\frac{(\mu_s ct)^n}{n!}$ - Poisson probability for $n$ scattering events, $\delta L_s^{(n)}$ - factor containing all scattering information. Full expression one can find in [[V.Allakhverdian et al.]()], formula (34). 
+
+Knowing the green function, you can convolve it with an arbitrary source and detector, obtaining the complete signal recorded in the detector. This procedure is carried out in this program.
+
+
 
 # Getting Started
 
