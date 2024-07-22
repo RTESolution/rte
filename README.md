@@ -23,7 +23,7 @@
 
 # About the project
 
-This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation [[V.Allakhverdian et al.]()].
+This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation [[V. Allakhverdian, D. Naumov](https://arxiv.org/abs/2401.15698)].
 
 We solve the radiative transfer equation (RTE) in anisotropically scattering media as an infinite series. Each series term represents a distinct number of scattering events, with analytical solutions derived for zero and single scattering. Higher-order corrections are addressed through numerical calculations or approximations. The RTE solution corresponds to Monte Carlo sampling of photon trajectories with fixed start and end points. 
 
@@ -45,7 +45,7 @@ and
 
 $\delta L^{(n)} = e^{-\mu_a ct} P_n(\mu_s ct) \delta L_s^{(n)}$.
 
-$P_n(\mu_s ct) = e^{-\mu_s ct}\frac{(\mu_s ct)^n}{n!}$ - Poisson probability for $n$ scattering events, $\delta L_s^{(n)}$ - factor containing all scattering information. Full expression one can find in [[V.Allakhverdian et al.]()], formula (34). 
+$P_n(\mu_s ct) = e^{-\mu_s ct}\frac{(\mu_s ct)^n}{n!}$ - Poisson probability for $n$ scattering events, $\delta L_s^{(n)}$ - factor containing all scattering information. Full expression one can find in [[V. Allakhverdian, D. Naumov](https://arxiv.org/abs/2401.15698)], formula (34). 
 
 Knowing the green function, you can convolve it with an arbitrary source and detector, obtaining the complete signal recorded in the detector. This procedure is carried out in this program.
 
