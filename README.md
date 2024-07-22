@@ -25,6 +25,12 @@
 
 This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation [[V.Allakhverdian et al.]()].
 
+RTE is a method developed for calculating light fluxes at an arbitrary point in space with an arbitrary source and an arbitrary detector at the registration point. 
+The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are uaing Heney-Greenstein function as scattering indicatrix, but the method in the article can work with an arbirtary indicatrix. 
+
+In the article [[V.Allakhverdian et al.]()] Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
+    
+$L=L_0+\sum_{n=1}^\infty\delta L^{(n)}$.
 *TODO*
 
 # Getting Started
