@@ -34,3 +34,27 @@ def plot_trajectory(points, factor):
                                antialias=False)
         view.addItem(line)
     view.show()
+
+def plot_photons(points, photon_size=1):
+    view = gl.GLViewWidget()
+    #grids
+    #view.addItem(grid:=gl.GLGridItem())
+    #axes
+    view.addItem(zaxis:=gl.GLGridItem())
+    zaxis.setSize(0,0,10)
+    #colormap
+    alpha=0.7
+    width=2
+    factor=1
+    points.T = normalize(points.T, axis=None).squeeze()
+    cm = pg.colormap.get('CET-D8')
+    for pt in points.iter():
+        color = cm.map([1-pt.T]*2, mode='Float')
+        #color[:,3]=alpha#set the alpha
+        line=gl.GLLinePlotItem(pos=[pt.R, pt.R+pt.s*photon_size], 
+                               color=color,
+                               width=width,
+                               antialias=False)
+        #plot all the photon directions
+        view.addItem(line)
+    view.show()
