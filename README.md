@@ -35,7 +35,7 @@ $p_g(\hat{\bf{s}},\hat{\bf{s}}_1) = \frac{1-g^2}{4\pi}(1+g^2-2g(\hat{\bf{s}},\ha
 
 but the method in the article can work with an arbirtary indicatrix. 
 
-In the article [[V.Allakhverdian et al.]()] Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
+In the article Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
     
 $L=L_0+\sum\limits_{n=1}^\infty\delta L^{(n)}$, where
 
