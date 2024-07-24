@@ -29,7 +29,7 @@ RTE is a method developed for calculating light fluxes at an arbitrary point in 
 
 ## Method in details
 We solve the radiative transfer equation (RTE) in anisotropically scattering media as an infinite series. Each series term represents a distinct number of scattering events, with analytical solutions derived for zero and single scattering. Higher-order corrections are addressed through numerical calculations or approximations. The RTE solution corresponds to Monte Carlo sampling of photon trajectories with fixed start and end points. 
-The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are uaing Heney-Greenstein function as scattering indicatrix:
+The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are using Heney-Greenstein function as scattering indicatrix:
 
 $p_g(\hat{\bf{s}},\hat{\bf{s}}_1) = \frac{1-g^2}{4\pi}(1+g^2-2g(\hat{\bf{s}},\hat{\bf{s}}_1))^{-3/2}$,
 
