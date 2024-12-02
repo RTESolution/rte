@@ -6,27 +6,24 @@ from tqdm.auto import tqdm
 import pylab as plt
 import sys
 import warnings
+import gvar
 
 #read the argument name
 if len(sys.argv)<2:
     print(f"Usage:`python {sys.argv[0]} <filename>.npz`")
     exit()
-fname = sys.argv[1]
-
-#calculate the factor
-R = 0.21
-S_factor = np.pi * R**2
+fname = sys.argv[1] #"Light_1_0_1_0.9.npz" 
 
 #read file
 data = np.load(fname)
 r_tgt = data['r']
 #select some points, we don't want to process all of them
-n = 5 
+n = 5
 #take every n-th point
-times = data['time'][::n]
-photons = data['photons'][:,:,::n]
-#skip 0-th order, stop at 4th 
-photons = photons[1:5]
+times = data['time'][1::n]
+photons = data['photons'][:,:,1::n]
+#skip 0-th order
+photons = photons[1:]
 
 #initial setup for source and target
 src = rte.Source(R=vp.Vector([0,0,0]),
@@ -39,40 +36,38 @@ tgt = rte.Target(R=vp.Vector(data['r']),
 
 #prepare the orders of calculation
 Nsteps_total = photons.shape[0]
-Ns = np.arange(Nsteps_total)+1
+Ns = np.arange(1,Nsteps_total)
 
 #do the calculation
 result = []
-for Nsteps in Ns:
-    result_n = []
+for Nsteps in tqdm(Ns):
     p = rte.Process(src, tgt, medium=rte.medium.water, Nsteps=Nsteps)
-    for t in tqdm(times, desc=f'{Nsteps} order'):
-        p['tgt']['T']=vp.Fixed(t)
-        res = p.calculate(nitn=10, neval=10000)
-        result_n.append([res.mean, res.sdev])
-    result.append(result_n)
+    p.vegas_kwargs = dict(nitn=10, neval=10000)
+    res = p.calculate_map(override={'tgt.T':times}, output='reshape')
+    result.append(res)
+
 #make it the same shape as photons
 result = np.array(result)
-result = np.swapaxes(result, 1,2)
+result = np.stack([gvar.mean(result), gvar.sdev(result)], axis=1)
 
+#import pylab as plt
 #plot the comparison
-fig, axes = plt.subplots(2,len(Ns)//2, figsize=(8,6))#, sharey=True)
+fig, axes = plt.subplots(2,int(np.ceil(len(Ns)/2)), figsize=(8,6))#, sharey=True)
 axes = axes.flatten()
 ax = iter(axes)
-import pylab as plt
+
 for N in Ns:
     plt.sca(next(ax))
-    d_mean = photons[N,0,:]
-    d_sdev = photons[N,1,:]
+    d_mean = photons[N-1,0,:]
+    d_sdev = photons[N-1,1,:]
     plt.errorbar(x=times, y=d_mean, yerr=d_sdev, fmt='.k', label='old')
-    c_mean = np.array([v.mean for v in result[N-1]])#*S_factor
-    c_sdev = np.array([v.sdev for v in result[N-1]])#*S_factor
+    c_mean = result[N-1,0,:]
+    c_sdev = result[N-1,1,:]
     plt.errorbar(x=times, y=c_mean, yerr=c_sdev, fmt='r-', label='new')
-    plt.errorbar(x=times, y=c_mean*S_factor, yerr=c_sdev*S_factor, 
-                 fmt='r:', label='new*S')
+    #plt.errorbar(x=times, y=c_mean*S_factor, yerr=c_sdev*S_factor,fmt='r:', label='new*S')
     plt.yscale('log')
     plt.grid(ls=':')
-    plt.ylabel('$\Phi^{'+f'({N})'+'}$')
+    plt.ylabel(r'$\Phi^{'+f'({N})'+'}$')
     
 axes[0].legend()
 plt.xlabel('Time, s')
