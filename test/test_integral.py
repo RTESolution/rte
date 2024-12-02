@@ -25,5 +25,6 @@ def test_fixed_time(R, T, Nsteps, expected):
                      s=vp.Vector([0,0,1]))
 
     p = rte.Process(src, tgt, medium=rte.medium.water, Nsteps=Nsteps)
-    result = p.calculate(**vegas_kwargs)
+    p.vegas_kwargs = vegas_kwargs
+    result = p.calculate()
     assert np.isclose(result.mean, expected)
