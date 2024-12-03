@@ -1,11 +1,14 @@
+![PyPI - Version](https://img.shields.io/pypi/v/rte)
+[![Test](https://github.com/RTESolution/rte/actions/workflows/test.yml/badge.svg)](https://github.com/RTESolution/rte/actions/workflows/test.yml)
+
 # Table of contents
 
 - [About the project](#about-the-project)
 - [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
-    + [1. Use development version from github](#1-use-development-version-from-github)
-    + [2. Install tagged package from PyPI](#2-install-tagged-package-from-pypi)
+    + [1. Install tagged package from PyPI](#1-install-tagged-package-from-pypi)
+    + [2. Use development version from github](#2-use-development-version-from-github)
   * [Running the calculation](#running-the-calculation)
   * [Running the calculation in parallel](#running-the-calculation-in-parallel)
 - [How to define parameter expressions](#how-to-define-parameter-expressions)
@@ -20,37 +23,14 @@
     + [Modifying](#modifying)
 - [Inspecting trajectories](#inspecting-trajectories)
     + [3D viewer](#3d-viewer)
+- [RTE Method details](#rte-method-details)
 - [License](#license)
 
 # About the project
 
 This package implements the calculation of the photon propagation, using the infinite series solution of the Radiative Transfer Equation (RTE) [[V. Allakhverdian, D. Naumov](https://arxiv.org/abs/2401.15698)].
 
-RTE is a method developed for calculating light fluxes at an arbitrary point in space with an arbitrary source and an arbitrary detector at the registration point. 
-
-## Method in details
-We solve the radiative transfer equation (RTE) in anisotropically scattering media as an infinite series. Each series term represents a distinct number of scattering events, with analytical solutions derived for zero and single scattering. Higher-order corrections are addressed through numerical calculations or approximations. The RTE solution corresponds to Monte Carlo sampling of photon trajectories with fixed start and end points. 
-The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are using Heney-Greenstein function as scattering indicatrix:
-
-$p_g(\hat{\bf{s}},\hat{\bf{s}}_1) = \frac{1-g^2}{4\pi}(1+g^2-2g(\hat{\bf{s}},\hat{\bf{s}}_1))^{-3/2}$,
-
-but the method in the article can work with an arbirtary indicatrix. 
-
-In the article Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
-    
-$L=L_0+\sum\limits_{n=1}^\infty\delta L^{(n)}$, where
-
-$L_0  = e^{-\mu_t ct}c \delta^3(\bf{r}-c\hat{\bf{s}}_0 t)\delta^2(\hat{\bf{s}}-\hat{\bf{s}}_0)$
-
-and
-
-$\delta L^{(n)} = e^{-\mu_a ct} P_n(\mu_s ct) \delta L_s^{(n)}$.
-
-$P_n(\mu_s ct) = e^{-\mu_s ct}\frac{(\mu_s ct)^n}{n!}$ - Poisson probability for $n$ scattering events, $\delta L_s^{(n)}$ - factor containing all scattering information. Full expression one can find in [[V. Allakhverdian, D. Naumov](https://arxiv.org/abs/2401.15698)], formula (34). 
-
-Knowing the green function, you can convolve it with an arbitrary source and detector, obtaining the complete signal recorded in the detector. This procedure is carried out in this program.
-
-
+RTE is a method developed for calculating light fluxes at an arbitrary point in space with an arbitrary source and an arbitrary detector at the registration point. See [this section](#rte-method-details) for details 
 
 # Getting Started
 
@@ -67,18 +47,19 @@ All the dependencies are installed automatically when you install RTE package.
 
 Install using pip:
 
-### 1. Use development version from github
+### 1. Install tagged package from PyPI
 ```shell
-pip install git+https://github.com/RTESolution/rte.git
+pip install rte
 ```
 Optionally you can install the dependencies for the 3D visualisation and for running tests
 ```shell
-pip install "git+https://github.com/RTESolution/rte.git[gui, test]"
+pip install rte[gui, test]
 ```
-### 2. Install tagged package from PyPI
-*TODO*
 
-
+### 2. Use development version from github
+```shell
+pip install git+https://github.com/RTESolution/rte.git
+```
 
 ## Running the calculation
 
@@ -309,11 +290,31 @@ plot_photons(src.sample(100), #generate 100 photons from source
              photon_size=1) #show each of the photons as 1m line
 ```
 
+
+## RTE Method details
+
+We solve the radiative transfer equation (RTE) in anisotropically scattering media as an infinite series. Each series term represents a distinct number of scattering events, with analytical solutions derived for zero and single scattering. Higher-order corrections are addressed through numerical calculations or approximations. The RTE solution corresponds to Monte Carlo sampling of photon trajectories with fixed start and end points. 
+The medium in which light propagates is specified by the following parameters: $n(\lambda)$ - refraction index, $\mu_s(\lambda)$ - inverse scattering length, $\mu_a(\lambda)$ - inverse absorption length, $p_g(\hat{\bf{s}},\hat{\bf{s}}_1)$ - scattering indicatrix. For Mi scattering we are using Heney-Greenstein function as scattering indicatrix:
+
+$p_g(\hat{\bf{s}},\hat{\bf{s}}_1) = \frac{1-g^2}{4\pi}(1+g^2-2g(\hat{\bf{s}},\hat{\bf{s}}_1))^{-3/2}$,
+
+but the method in the article can work with an arbirtary indicatrix. 
+
+In the article Green function for radiative transfer equation was found with iteration method. For each iteration was found exact formula for fluxes: 
+    
+$L=L_0+\sum\limits_{n=1}^\infty\delta L^{(n)}$, where
+
+$L_0  = e^{-\mu_t ct}c \delta^3(\bf{r}-c\hat{\bf{s}}_0 t)\delta^2(\hat{\bf{s}}-\hat{\bf{s}}_0)$
+
+and
+
+$\delta L^{(n)} = e^{-\mu_a ct} P_n(\mu_s ct) \delta L_s^{(n)}$.
+
+$P_n(\mu_s ct) = e^{-\mu_s ct}\frac{(\mu_s ct)^n}{n!}$ - Poisson probability for $n$ scattering events, $\delta L_s^{(n)}$ - factor containing all scattering information. Full expression one can find in [[V. Allakhverdian, D. Naumov](https://arxiv.org/abs/2401.15698)], formula (34). 
+
+Knowing the green function, you can convolve it with an arbitrary source and detector, obtaining the complete signal recorded in the detector. This procedure is carried out in this program.
+
+
 # License
 
-*TODO*
-
-
-
-
-
+`rte` is distributed under the terms of MIT License
