@@ -1,3 +1,6 @@
+![PyPI - Version](https://img.shields.io/pypi/v/rte)
+[![Test](https://github.com/RTESolution/rte/actions/workflows/test.yml/badge.svg)](https://github.com/RTESolution/rte/actions/workflows/test.yml)
+
 # Table of contents
 
 - [About the project](#about-the-project)
