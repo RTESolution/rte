@@ -5,36 +5,12 @@ import vegas_params as vp
 from vegas_params.vector import vector
 from vegas_params.utils import swapaxes
 from .medium import Medium
-
+from scipy.stats import beta
 from loguru import logger
 
 #intermediate steps
 
-#times
-@vp.expression
-@swapaxes
-def Times_from_xi(self, xi):
-    r"""Construct normalized times (t/T) from given xi values:
-
-    Parameters:
-    -----------
-        xi: np.ndarray
-            Array of shape (Nsamples,N,...) of values :math:`\xi\in[0,1]`
-    Factor:
-    -------
-    .. math ::
-        f = \prod_{i=1}^{N} (1-\xi_i)^{i-1}
-
-    Returns: 
-    --------
-    array of normalized time of shape (Nsamples,N,...), t[0]=0, t[N]=1
-    .. math ::
-        \tau_i = \prod_{k=i}^{N}(1-\xi_k)
-    """
-    #calculate factor
-    powers = np.arange(len(xi))-1
-    powers = powers.reshape(-1,1)
-    self.factor = np.prod(np.power((1.-xi)[1:],powers[1:]), axis=0)
+def times_from_xi(xi):
     #calculate T
     xi_rev = np.flip(xi, axis=0)
     t_rev = np.cumprod(1-xi_rev, axis=0)
@@ -44,6 +20,29 @@ def Times_from_xi(self, xi):
     t = np.append(t, np.ones(shape=(1,*t.shape[1:])), axis=0)
     #return result
     return t
+
+def Times_from_uniform_xi(Nsteps):
+    @vp.expression
+    @swapaxes
+    def times(self, xi):
+        #calculate factor
+        powers = np.arange(len(xi))-1
+        powers = powers.reshape(-1,1)
+        self.factor = np.prod(np.power((1.-xi)[1:],powers[1:]), axis=0)
+        return times_from_xi(xi)
+    return times(1|vp.Uniform([0,1])**(Nsteps-1))
+
+def Times_from_beta_xi(Nsteps):
+    @vp.expression
+    @swapaxes
+    def times(self, xi):
+        #factor is Gamma(n)/Gamma(1+n)=1/n for each step, so it's (1/n!)
+        self.factor = 1/np.prod(np.arange(1,Nsteps))
+        self.factor *= np.ones_like(xi)
+        return times_from_xi(xi)
+        
+    n = np.arange(1,Nsteps)
+    return times(xi = 1|vp.FromDistribution(beta(a=1,b=n).ppf,size=Nsteps-1))
 
 #directions
 class Directions_from_scattering_distr(vp.Expression):
@@ -100,7 +99,7 @@ class StepsUniform(vp.Expression):
         """
         self.Nsteps = Nsteps
         self.medium = medium
-        super().__init__(t=Times_from_xi(xi=1|vp.Uniform([0,1])**(Nsteps-1)),
+        super().__init__(t=Times_from_uniform_xi(Nsteps),
                          s=s0|vp.Direction()**(Nsteps-1)
                         )
         
@@ -116,7 +115,7 @@ class StepsDistribution(vp.Expression):
     def __init__(self, Nsteps:int, medium:Medium, s0:vp.Direction=vp.Direction(1,0)):
   
         self.Nsteps = Nsteps
-        super().__init__(t=Times_from_xi(xi=1|vp.Uniform([0,1])**(Nsteps-1)),
+        super().__init__(t=Times_from_beta_xi(Nsteps),
                          s=Directions_from_scattering_distr(medium, Nsteps, s0=s0)
                         )
         
