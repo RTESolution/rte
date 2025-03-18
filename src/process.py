@@ -113,10 +113,42 @@ class CalculatorBase(vp.Expression):
             return [dict(**d,result=r) for d,r in zip(kwargs,result)]
         else:
             return result
+            
+class Process0(CalculatorBase):
+    """Calculate 0-scattering approximation"""
+    def __init__(self,
+                 src:vp.Expression,
+                 tgt:vp.Expression,
+                 medium:Medium,
+                ):
+        self.medium = medium
+        self.Nsteps = 0
+        self.vegas_kwargs = {'nitn':10, 'neval':3000}
+        #set the values to Fixed since they will not be used for integration
+        # - in 0th order the final point is defined by the initial point
+        tgt['_R_local']=[0,0,0]
+        tgt['T']=np.nan
+        tgt['_s_local']=[0,0,0]
+        super().__init__(src=src,tgt=tgt)
 
+    def __call__(self, src, tgt):
+        #target points
+        p0 = src
+        p1, intersection_found  = self['tgt'].get_intersection(p0, speed_of_light = self.medium.c, )
+        att_factor = self.medium.attenuation(p1.T-p0.T, n_scattering=0)
+        self.factor = att_factor
+        self.factor = self.factor.reshape(len(src))
+        self.factor*= self.medium.c
+        #take into account the detector efficiency
+        self.factor*= self['tgt'].efficiency(p1)
+        #set factor to 0 where there was no intersection found
+        self.factor[intersection_found!=True]=0
+
+        #return ones - they will be multiplied by the factor automatically
+        return np.ones(shape=len(src))
     
 class Process(CalculatorBase):
-    r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the orrder `Nsteps`:
+    r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the order `Nsteps`>0:
 
     .. math ::
         \delta L^{(n)} = 
