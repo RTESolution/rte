@@ -1,4 +1,4 @@
-import rte
+from .sources import Point
 import vegas_params as vp
 import numpy as np
 
@@ -17,16 +17,16 @@ class DetectorSpherical(vp.Expression):
     def __call__(self, center, radius, T, _R_local, _s_local):
         R = vp.Vector.__call__(_R_local) * vp.Scalar.__call__(radius) + vp.Vector.__call__(center)
         s = vp.Vector(_s_local)
-        return rte.Point(R, T, s)
+        return Point(R, T, s)
 
-    def efficiency(self, p: rte.Point)->np.array:
+    def efficiency(self, p: Point)->np.array:
         return np.ones(len(p))
 
     def get_intersection(self,
-                         p: rte.Point,
+                         p: Point,
                          speed_of_light:np.array,
                          return_is_hit_array:bool=True
-                        )->rte.Point:
+                        )->Point:
         r0, s = p.R, p.s
         R = self['radius'].sample()
         r = self['center'].sample()-r0
@@ -42,7 +42,7 @@ class DetectorSpherical(vp.Expression):
         #get the final point
         r1 = r0+s*l
         t1 = p.T + l/speed_of_light
-        p1 = rte.Point(R=r1, T=t1, s=s)
+        p1 = Point(R=r1, T=t1, s=s)
         if return_is_hit_array:
             return p1, is_hit.squeeze()
         else:
