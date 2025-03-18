@@ -22,6 +22,20 @@ class HeneyGreenshtein:
 
 @dataclass
 class Medium:
+    """
+    Medium properties description
+
+    Parameters
+    ----------
+    mu_a: float 
+        Inverse absorption length, 1/m
+    mu_s: float 
+        Inverse scattering length, 1/m
+    c: float
+        Speed of light in medium, m/s
+    g: float
+        Asymmetry parameter: average cosine of scattering
+    """
     mu_a:float #inverse absorption length
     mu_s:float #inverse scattering length
     c:float  #speed of light in the medium
