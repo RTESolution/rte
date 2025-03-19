@@ -12,11 +12,11 @@ class DetectorSpherical(vp.Expression):
                          radius = vp.Scalar(radius),
                          T = vp.Scalar(T),
                          _R_local = vp.Direction(),
-                         _s_local = np.nan #vp.Direction()
+                         _s_local = vp.Vector([0,0,1]) #not used
                         )
     def __call__(self, center, radius, T, _R_local, _s_local):
         R = vp.Vector.__call__(_R_local) * vp.Scalar.__call__(radius) + vp.Vector.__call__(center)
-        s = vp.Vector(_s_local)
+        s = vp.Vector.__call__(_s_local)
         return Point(R, T, s)
 
     def efficiency(self, p: Point)->np.array:
