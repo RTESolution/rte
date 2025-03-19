@@ -37,7 +37,7 @@ class DetectorSpherical(vp.Expression):
         #calculate discriminant
         D = sr**2 - (r.mag2() - R**2)
         #calculate l - and we need the intersection with the lowest possible l
-        is_hit = (D>0) & (D<=sr**2)
+        is_hit = (sr>0) & (D>0) & (D<=sr**2)
         l = np.where(is_hit,  sr-np.sqrt(D), r.mag())
         #get the final point
         r1 = r0+s*l
