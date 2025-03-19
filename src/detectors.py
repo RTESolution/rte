@@ -25,7 +25,7 @@ class DetectorSpherical(vp.Expression):
     def get_intersection(self,
                          p: Point,
                          speed_of_light:np.array,
-                         return_is_hit_array:bool=True
+                         soft=False
                         )->Point:
         r0, s = p.R, p.s
         R = self['radius'].sample()
@@ -43,9 +43,6 @@ class DetectorSpherical(vp.Expression):
         r1 = r0+s*l
         t1 = p.T + l/speed_of_light
         p1 = Point(R=r1, T=t1, s=s)
-        if return_is_hit_array:
-            return p1, is_hit.squeeze()
-        else:
-            #mark the invalid points as NaN
-            t1[is_hit==False] = np.nan
-            return p1
+        if(soft):
+            is_hit = np.exp(D)
+        return p1, is_hit.squeeze()
