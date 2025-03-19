@@ -14,8 +14,10 @@ from .sources import Point #dataclass which holds trajectory points
 from .steps import StepsUniform, StepsDistribution
 from .medium import Medium
 from .utils import combine_rotations, align_rotation_to_vector
+from typing import Callable, Iterable, Mapping
 
 from loguru import logger
+from copy import deepcopy
 
 
 # --- Expressions are defined here
@@ -113,7 +115,7 @@ class CalculatorBase(vp.Expression):
             return [dict(**d,result=r) for d,r in zip(kwargs,result)]
         else:
             return result
-            
+                 
 class Process0(CalculatorBase):
     """Calculate 0-scattering approximation"""
     def __init__(self,
@@ -122,7 +124,6 @@ class Process0(CalculatorBase):
                  medium:Medium,
                 ):
         self.medium = medium
-        self.Nsteps = 0
         #set the values to Fixed since they will not be used for integration
         # - in 0th order the final point is defined by the initial point
         tgt['_R_local']=[0,0,0]
@@ -158,7 +159,7 @@ class Process0(CalculatorBase):
         self.vegas_kwargs.setdefault('adapt', adapt_expression)
         return super().calculate(override)
         
-class Process(CalculatorBase):
+class ProcessN(CalculatorBase):
     r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the order `Nsteps`>0:
 
     .. math ::
@@ -267,3 +268,43 @@ class Process(CalculatorBase):
         
         #return ones - they will be multiplied by the factor automatically
         return np.ones(shape=(1,Nsamples))
+
+
+class RTECalculator(CalculatorBase):
+    def __init__(self,
+                 src:vp.Expression, 
+                 tgt:vp.Expression, 
+                 medium:Medium
+                ):
+        self.src = src
+        self.tgt = tgt
+        self.medium = medium
+        
+    def get_process_iter(self, Nsteps:Iterable[int]|int=0, **kwargs):
+        if isinstance(Nsteps, Iterable):
+            for N in Nsteps:
+                yield self.get_process(N, **kwargs)
+                
+    def get_process(self, Nsteps:int=0, **kwargs):
+        if Nsteps>0:
+            process = ProcessN(src=deepcopy(self.src), 
+                               tgt=deepcopy(self.tgt), 
+                               medium=self.medium, 
+                               Nsteps=Nsteps, 
+                               **kwargs)
+        else:
+            process = Process0(src=deepcopy(self.src), 
+                               tgt=deepcopy(self.tgt), 
+                               medium=self.medium,
+                               **kwargs)
+        process.vegas_kwargs = self.vegas_kwargs
+        return process
+                        
+    def calculate(self, override:dict=None, Nsteps=range(0,10)):
+        for process in self.get_process_iter(Nsteps):
+            yield process.calculate(override)
+            
+    def calculate_map(self, override:dict, output='dict', map_function="ProcessPool", Nsteps=range(0,10)):
+        for process in self.get_process_iter(Nsteps):
+            yield process.calculate_map(override, output, map_function)
+        
