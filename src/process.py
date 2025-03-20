@@ -18,7 +18,7 @@ from typing import Callable, Iterable, Mapping
 
 from loguru import logger
 from copy import deepcopy
-
+import warnings
 
 # --- Expressions are defined here
 class CalculatorBase(vp.Expression):
@@ -71,7 +71,9 @@ class CalculatorBase(vp.Expression):
             for key, value in override.items():
                 if not key.startswith('_'):
                     self[key]=value
-        return vp.integral(self)(**self.vegas_kwargs)
+        with warnings.catch_warnings(category=RuntimeWarning, record=False):
+            warnings.simplefilter("ignore")
+            return vp.integral(self)(**self.vegas_kwargs)
 
     def calculate_map(self, override:dict, 
                       output='dict', 
