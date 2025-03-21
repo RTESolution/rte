@@ -21,25 +21,12 @@ from copy import deepcopy
 import warnings
 
 # --- Expressions are defined here
+
 class CalculatorBase(vp.Expression):
     vegas_kwargs = {'nitn':10, 'neval':3000}
     
     """A base class to all process calculators, with capacity to calculate and integrate"""
     
-    def __getitem__(self, key):
-        expr = super()
-        for token in key.split('.'):
-            expr = expr.__getitem__(token)
-        return expr
-    
-    def __setitem__(self, key, value):
-        try:
-            path, key = key.rsplit('.',1)
-            expr = self[path]
-        except ValueError:
-            expr = super()
-        expr.__setitem__(key, value)
-
     def calculate(self, override:dict=None):
         """Run the calculation using the vegas integrator.
 
