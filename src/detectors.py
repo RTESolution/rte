@@ -3,6 +3,7 @@ import vegas_params as vp
 import numpy as np
 
 class DetectorSpherical(vp.Expression):
+    """A spherical detector with a given radius and center position"""
     def __init__(self,
                  center = vp.Vector([0,0,0]),
                  radius = vp.Scalar(0.216),
@@ -14,6 +15,8 @@ class DetectorSpherical(vp.Expression):
                          _R_local = vp.Direction(),
                          _s_local = vp.Vector([0,0,1]) #not used
                         )
+        self.soften_parameter = 0.01 #a parameter for making a soft aiming function
+        
     def __call__(self, center, radius, T, _R_local, _s_local):
         R = vp.Vector.__call__(_R_local) * vp.Scalar.__call__(radius) + vp.Vector.__call__(center)
         s = vp.Vector.__call__(_s_local)
@@ -26,7 +29,7 @@ class DetectorSpherical(vp.Expression):
                          p: Point,
                          speed_of_light:np.array,
                          soft=False
-                        )->Point:
+                        )->(Point, np.array):
         r0, s = p.R, p.s
         R = self['radius'].sample()
         r = self['center'].sample()-r0
@@ -44,5 +47,5 @@ class DetectorSpherical(vp.Expression):
         t1 = p.T + l/speed_of_light
         p1 = Point(R=r1, T=t1, s=s)
         if(soft):
-            is_hit = np.exp(D)
+            is_hit = np.exp(self.soften_parameter*D)
         return p1, is_hit.squeeze()
