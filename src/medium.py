@@ -42,9 +42,12 @@ class Medium:
     g:float # average cosine of scattering (asymmetry parameter)
     
     def __post_init__(self):
-        self.mu_t=self.mu_a+self.mu_s
         self.h_g = HeneyGreenshtein(self.g)
 
+    @property
+    def mu_t(self):
+        return self.mu_a+self.mu_s
+    
     def attenuation_factor(self, time:np.ndarray)->np.ndarray:
         return np.exp(-self.mu_t*self.c*time)
 
