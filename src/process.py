@@ -64,7 +64,8 @@ class CalculatorBase(vp.Expression):
 
     def calculate_map(self, override:dict, 
                       output='dict', 
-                      map_function="ProcessPool"):
+                      map_function="ProcessPool",
+                      **kwargs):
         """Perform several calculations, for each of the values defined in 'override' dictionary.
         
         Parameters
@@ -80,7 +81,8 @@ class CalculatorBase(vp.Expression):
         map_function : callable or "ProcessPool"
             This can be a default python `map` function, or its equivalent.
             If a string "ProcessPool" is given - use `concurrent.futures.ProcessPoolExecutor` to run calculation concurrently.
-            
+        kwargs: 'dict'
+            Keyword arguments will be passed into the ProcessPollExecutor, if it is used
         Returns
         -------
         list of dicts, or np.array, depending on the `output` parameter
@@ -90,7 +92,7 @@ class CalculatorBase(vp.Expression):
         If 'override' has several keys, the resulting calculation will be performed for the Cartesian product of these parameters (i.e. `override={'A':[1,2], 'B':[3,4]}` means calculation for `[{'A':1,'B':3},{'A':2,'B':3},{'A':1,'B':4}{'A':2,'B':4}]`
         """
         if map_function == 'ProcessPool':
-            with ProcessPoolExecutor() as executor:
+            with ProcessPoolExecutor(**kwargs) as executor:
                 return self.calculate_map(override=override, output=output, map_function=executor.map)
                 
         keys,values = override.keys(), override.values()
