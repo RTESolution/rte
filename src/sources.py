@@ -39,8 +39,18 @@ class Target:
                      np.atleast_3d(T),
                      np.atleast_3d(s))
 
-class Source(Target):
-    pass
+@expression
+class Source:
+    R: Vector = Spherical()
+    T: Scalar = Uniform([0,1])
+    s: Direction = Direction(1,0)
+    
+    def __call__(self, R, T, s):
+        self.factor=1
+        return Point(np.atleast_3d(R),
+                     np.atleast_3d(T),
+                     np.atleast_3d(s))
+
 
 @expression
 class TrackSource:

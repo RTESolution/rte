@@ -14,12 +14,144 @@ from .sources import Point #dataclass which holds trajectory points
 from .steps import StepsUniform, StepsDistribution
 from .medium import Medium
 from .utils import combine_rotations, align_rotation_to_vector
+from typing import Callable, Iterable, Mapping
 
 from loguru import logger
+from copy import deepcopy
+import warnings
 
 # --- Expressions are defined here
-class Process(vp.Expression):
-    r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the orrder `Nsteps`:
+
+class CalculatorBase(vp.Expression):
+    vegas_kwargs = {'nitn':10, 'neval':3000}
+    
+    """A base class to all process calculators, with capacity to calculate and integrate"""
+    
+    def calculate(self, override:dict=None):
+        """Run the calculation using the vegas integrator.
+
+        Parameters
+        ----------
+        override: dict[str, value]
+            Change some parameters to given values, before calculating. 
+            If None (default), just run the calculation.
+        Returns
+        -------
+        gvar.GVar:
+            The integration result, containing mean value and sdev.
+
+        Notes
+        ------
+            * User can change the vegas integrator parameters via `Process.vegas_kwargs` variable
+            * Override just replaces the initial values of given parameters. 
+            Running 
+            ```
+            p.calculate(override={'src.T':1})
+            ``` 
+            is equivalent to
+            ```python
+            p['src.T']=1
+            p.calculate()
+            ```
+        """
+        if override is not None:
+            for key, value in override.items():
+                if not key.startswith('_'):
+                    self[key]=value
+        with warnings.catch_warnings(category=RuntimeWarning, record=False):
+            warnings.simplefilter("ignore")
+            return vp.integral(self)(**self.vegas_kwargs)
+
+    def calculate_map(self, override:dict, 
+                      output='dict', 
+                      map_function="ProcessPool",
+                      **kwargs):
+        """Perform several calculations, for each of the values defined in 'override' dictionary.
+        
+        Parameters
+        ----------
+        override : dict[str, list]
+            A dictionary where key defines the parameter to be changed, and value defines the list of values for that parameter. 
+        
+        output : 'dict'|'reshape'
+            Expected output shape. 
+            If 'dict' (default) - return the dict with values and result
+            If 'reshape' - return an array of values, with dimensions corresponding to given parameters.
+        
+        map_function : callable or "ProcessPool"
+            This can be a default python `map` function, or its equivalent.
+            If a string "ProcessPool" is given - use `concurrent.futures.ProcessPoolExecutor` to run calculation concurrently.
+        kwargs: 'dict'
+            Keyword arguments will be passed into the ProcessPollExecutor, if it is used
+        Returns
+        -------
+        list of dicts, or np.array, depending on the `output` parameter
+        
+        Notes
+        -----
+        If 'override' has several keys, the resulting calculation will be performed for the Cartesian product of these parameters (i.e. `override={'A':[1,2], 'B':[3,4]}` means calculation for `[{'A':1,'B':3},{'A':2,'B':3},{'A':1,'B':4}{'A':2,'B':4}]`
+        """
+        if map_function == 'ProcessPool':
+            with ProcessPoolExecutor(**kwargs) as executor:
+                return self.calculate_map(override=override, output=output, map_function=executor.map)
+                
+        keys,values = override.keys(), override.values()
+        kwargs = [dict(zip(keys,v)) for v in product(*values)]
+        #run the actual calculation
+        result =  list(map_function(self.calculate, kwargs))
+        #output the result
+        if output=='reshape':
+            return np.asarray(result).reshape([len(v) for v in values])
+        elif output=='dict':
+            return [dict(**d,result=r) for d,r in zip(kwargs,result)]
+        else:
+            return result
+                 
+class Process0(CalculatorBase):
+    """Calculate 0-scattering approximation"""
+    def __init__(self,
+                 src:vp.Expression,
+                 tgt:vp.Expression,
+                 medium:Medium,
+                ):
+        self.medium = medium
+        #set the values to Fixed since they will not be used for integration
+        # - in 0th order the final point is defined by the initial point
+        tgt['_R_local']=[0,0,0]
+        tgt['T']=np.nan
+        tgt['_s_local']=[0,0,0]
+        super().__init__(src=src,tgt=tgt)
+
+    def __call__(self, src, tgt):
+        #target points
+        p0 = src
+        p1, intersection_found  = self['tgt'].get_intersection(p0, speed_of_light = self.medium.c)
+        att_factor = self.medium.attenuation(p1.T-p0.T, n_scattering=0)
+        self.factor = att_factor
+        self.factor = self.factor.reshape(len(src))
+        # self.factor*= self.medium.c
+        #take into account the detector efficiency
+        self.factor*= self['tgt'].efficiency(p1)
+        #set factor to 0 where there was no intersection found
+        self.factor[intersection_found!=True]=0
+        #return ones - they will be multiplied by the factor automatically
+        return np.ones(shape=len(src))
+            
+    def calculate(self, override:dict=None):
+        #make an expression for adapting the vegas
+        @vp.expression(src=self['src'],tgt=self['tgt'])
+        def adapt_expression(src,tgt):
+            #target points
+            p0 = src
+            p1, intersection_found  = self['tgt'].get_intersection(p0, speed_of_light = self.medium.c, soft=True)
+            return intersection_found.reshape(len(src))
+
+        #use adapting expression
+        self.vegas_kwargs.setdefault('adapt', adapt_expression)
+        return super().calculate(override)
+        
+class ProcessN(CalculatorBase):
+    r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the order `Nsteps`>0:
 
     .. math ::
         \delta L^{(n)} = 
@@ -38,7 +170,6 @@ class Process(vp.Expression):
         self.Nsteps = Nsteps
         self.save_trajectory = save_trajectory
         self.use_masking = use_masking
-        self.vegas_kwargs = {'nitn':10, 'neval':3000}
 
         if use_uniform_sampling:
             super().__init__(src=src,tgt=tgt,
@@ -129,92 +260,42 @@ class Process(vp.Expression):
         #return ones - they will be multiplied by the factor automatically
         return np.ones(shape=(1,Nsamples))
 
-    def __getitem__(self, key):
-        expr = super()
-        for token in key.split('.'):
-            expr = expr.__getitem__(token)
-        return expr
-    
-    def __setitem__(self, key, value):
-        try:
-            path, key = key.rsplit('.',1)
-            expr = self[path]
-        except ValueError:
-            expr = super()
-        expr.__setitem__(key, value)
-        
-    def calculate(self, override:dict=None):
-        """Run the calculation using the vegas integrator.
 
-        Parameters
-        ----------
-        override: dict[str, value]
-            Change some parameters to given values, before calculating. 
-            If None (default), just run the calculation.
-        Returns
-        -------
-        gvar.GVar:
-            The integration result, containing mean value and sdev.
-
-        Notes
-        ------
-            * User can change the vegas integrator parameters via `Process.vegas_kwargs` variable
-            * Override just replaces the initial values of given parameters. 
-            Running 
-            ```
-            p.calculate(override={'src.T':1})
-            ``` 
-            is equivalent to
-            ```python
-            p['src.T']=1
-            p.calculate()
-            ```
-        """
-        if override is not None:
-            for key, value in override.items():
-                if not key.startswith('_'):
-                    self[key]=value
-        return vp.integral(self)(**self.vegas_kwargs)
-
-    def calculate_map(self, override:dict, 
-                      output='dict', 
-                      map_function="ProcessPool"):
-        """Perform several calculations, for each of the values defined in 'override' dictionary.
+class RTECalculator(CalculatorBase):
+    def __init__(self,
+                 src:vp.Expression, 
+                 tgt:vp.Expression, 
+                 medium:Medium
+                ):
+        self.src = src
+        self.tgt = tgt
+        self.medium = medium
         
-        Parameters
-        ----------
-        override : dict[str, list]
-            A dictionary where key defines the parameter to be changed, and value defines the list of values for that parameter. 
-        
-        output : 'dict'|'reshape'
-            Expected output shape. 
-            If 'dict' (default) - return the dict with values and result
-            If 'reshape' - return an array of values, with dimensions corresponding to given parameters.
-        
-        map_function : callable or "ProcessPool"
-            This can be a default python `map` function, or its equivalent.
-            If a string "ProcessPool" is given - use `concurrent.futures.ProcessPoolExecutor` to run calculation concurrently.
-            
-        Returns
-        -------
-        list of dicts, or np.array, depending on the `output` parameter
-        
-        Notes
-        -----
-        If 'override' has several keys, the resulting calculation will be performed for the Cartesian product of these parameters (i.e. `override={'A':[1,2], 'B':[3,4]}` means calculation for `[{'A':1,'B':3},{'A':2,'B':3},{'A':1,'B':4}{'A':2,'B':4}]`
-        """
-        if map_function == 'ProcessPool':
-            with ProcessPoolExecutor() as executor:
-                return self.calculate_map(override=override, output=output, map_function=executor.map)
+    def get_process_iter(self, Nsteps:Iterable[int]|int=0, **kwargs):
+        if isinstance(Nsteps, Iterable):
+            for N in Nsteps:
+                yield self.get_process(N, **kwargs)
                 
-        keys,values = override.keys(), override.values()
-        kwargs = [dict(zip(keys,v)) for v in product(*values)]
-        #run the actual calculation
-        result =  list(map_function(self.calculate, kwargs))
-        #output the result
-        if output=='reshape':
-            return np.asarray(result).reshape([len(v) for v in values])
-        elif output=='dict':
-            return [dict(**d,result=r) for d,r in zip(kwargs,result)]
+    def get_process(self, Nsteps:int=0, **kwargs):
+        if Nsteps>0:
+            process = ProcessN(src=deepcopy(self.src), 
+                               tgt=deepcopy(self.tgt), 
+                               medium=self.medium, 
+                               Nsteps=Nsteps, 
+                               **kwargs)
         else:
-            return result
+            process = Process0(src=deepcopy(self.src), 
+                               tgt=deepcopy(self.tgt), 
+                               medium=self.medium,
+                               **kwargs)
+        process.vegas_kwargs = self.vegas_kwargs
+        return process
+                        
+    def calculate(self, override:dict=None, Nsteps=range(0,10)):
+        for process in self.get_process_iter(Nsteps):
+            yield process.calculate(override)
+            
+    def calculate_map(self, override:dict, output='dict', map_function="ProcessPool", Nsteps=range(0,10), **kwargs):
+        for process in self.get_process_iter(Nsteps):
+            yield process.calculate_map(override, output, map_function, **kwargs)
+        

@@ -22,15 +22,32 @@ class HeneyGreenshtein:
 
 @dataclass
 class Medium:
+    """
+    Medium properties description
+
+    Parameters
+    ----------
+    mu_a: float 
+        Inverse absorption length, 1/m
+    mu_s: float 
+        Inverse scattering length, 1/m
+    c: float
+        Speed of light in medium, m/s
+    g: float
+        Asymmetry parameter: average cosine of scattering
+    """
     mu_a:float #inverse absorption length
     mu_s:float #inverse scattering length
     c:float  #speed of light in the medium
     g:float # average cosine of scattering (asymmetry parameter)
     
     def __post_init__(self):
-        self.mu_t=self.mu_a+self.mu_s
         self.h_g = HeneyGreenshtein(self.g)
 
+    @property
+    def mu_t(self):
+        return self.mu_a+self.mu_s
+    
     def attenuation_factor(self, time:np.ndarray)->np.ndarray:
         return np.exp(-self.mu_t*self.c*time)
 
