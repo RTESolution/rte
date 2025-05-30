@@ -295,7 +295,7 @@ class RTECalculator(CalculatorBase):
         for process in self.get_process_iter(Nsteps):
             yield process.calculate(override)
             
-    def calculate_map(self, override:dict, output='dict', map_function="ProcessPool", Nsteps=range(0,10)):
+    def calculate_map(self, override:dict, output='dict', map_function="ProcessPool", Nsteps=range(0,10), **kwargs):
         for process in self.get_process_iter(Nsteps):
-            yield process.calculate_map(override, output, map_function)
+            yield process.calculate_map(override, output, map_function, **kwargs)
         
