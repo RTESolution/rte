@@ -108,47 +108,30 @@ class CalculatorBase(vp.Expression):
             return result
                  
 class Process0(CalculatorBase):
-    """Calculate 0-scattering approximation"""
-    def __init__(self,
-                 src:vp.Expression,
-                 tgt:vp.Expression,
-                 medium:Medium,
-                ):
+    def __init__(self, src, tgt, medium):
+        #store the expressions for later use
+        self.src = src
+        self.det = tgt
         self.medium = medium
-        #set the values to Fixed since they will not be used for integration
-        # - in 0th order the final point is defined by the initial point
-        tgt['_R_local']=[0,0,0]
-        tgt['T']=np.nan
-        tgt['_s_local']=[0,0,0]
-        super().__init__(src=src,tgt=tgt)
-
+        super().__init__(src=src, tgt=tgt)
+        
     def __call__(self, src, tgt):
-        #target points
-        p0 = src
-        p1, intersection_found  = self['tgt'].get_intersection(p0, speed_of_light = self.medium.c)
-        att_factor = self.medium.attenuation(p1.T-p0.T, n_scattering=0)
-        self.factor = att_factor
-        self.factor = self.factor.reshape(len(src))
-        # self.factor*= self.medium.c
-        #take into account the detector efficiency
-        self.factor*= self['tgt'].efficiency(p1)
-        #set factor to 0 where there was no intersection found
-        self.factor[intersection_found!=True]=0
-        #return ones - they will be multiplied by the factor automatically
-        return np.ones(shape=len(src))
-            
-    def calculate(self, override:dict=None):
-        #make an expression for adapting the vegas
-        @vp.expression(src=self['src'],tgt=self['tgt'])
-        def adapt_expression(src,tgt):
-            #target points
-            p0 = src
-            p1, intersection_found  = self['tgt'].get_intersection(p0, speed_of_light = self.medium.c, soft=True)
-            return intersection_found.reshape(len(src))
-
-        #use adapting expression
-        self.vegas_kwargs.setdefault('adapt', adapt_expression)
-        return super().calculate(override)
+        p_src, p_det = src, tgt
+        dR = p_det.R-p_src.R
+        L = dR.mag()
+        s = dR/L
+        #update the points
+        p_src.s = p_det.s = s
+        #calculate the factors
+        F_src = self.src.luminosity(p_src).squeeze()
+        F_det = self.det.efficiency(p_det).squeeze()
+        F_medium = self.medium.attenuation(L, n_scattering=0).squeeze()
+        F_distance = 1/L.squeeze()**2
+        # print(f"{F_src=},\n{F_det=},\n{F_medium=}\n")
+        #resulting value        
+        F_result = F_det * F_src * F_medium * F_distance
+        # print(f"{F_result=}")
+        return F_result
         
 class ProcessN(CalculatorBase):
     r"""The calculator of the RTE term :math:`\delta L^{(n)}` of the order `Nsteps`>0:
