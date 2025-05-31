@@ -24,7 +24,15 @@ class DetectorSpherical(vp.Expression):
         return Point(R, T, s)
 
     def efficiency(self, p: Point)->np.array:
-        return np.ones(len(p))
+        #convert to local RF
+        R_local = p.R-self['center'].sample()
+        N_local = R_local/R_local.mag()
+        #discard rays coming from inside
+        cosTheta_to_normal = N_local.dot(p.s).squeeze()
+        eff_valid = 1.*(cosTheta_to_normal<0)
+        #multiply by -cosTheta to project rays on the surface
+        eff_valid *= -cosTheta_to_normal
+        return eff_valid
 
     def get_intersection(self,
                          p: Point,
