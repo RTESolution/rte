@@ -48,11 +48,11 @@ class Medium:
     def mu_t(self):
         return self.mu_a+self.mu_s
     
-    def attenuation_factor(self, time:np.ndarray)->np.ndarray:
-        return np.exp(-self.mu_t*self.c*time)
+    def attenuation_factor(self, distance:np.ndarray)->np.ndarray:
+        return np.exp(-self.mu_t*distance)
 
-    def attenuation(self, time:np.ndarray, n_scattering:int)->np.ndarray:
-        return ((self.c*self.mu_s*time)**n_scattering) * self.attenuation_factor(time)
+    def attenuation(self, distance:np.ndarray, n_scattering:int)->np.ndarray:
+        return ((self.mu_s*distance)**n_scattering) * self.attenuation_factor(distance)
 
     def scatter(self, x:np.ndarray)->np.ndarray:
         return self.h_g.pdf(x)/(2*np.pi)
