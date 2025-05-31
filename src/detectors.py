@@ -20,6 +20,7 @@ class DetectorSpherical(vp.Expression):
     def __call__(self, center, radius, T, _R_local, _s_local):
         R = vp.Vector.__call__(_R_local) * vp.Scalar.__call__(radius) + vp.Vector.__call__(center)
         s = vp.Vector.__call__(_s_local)
+        self.factor = (radius**2).squeeze()
         return Point(R, T, s)
 
     def efficiency(self, p: Point)->np.array:
